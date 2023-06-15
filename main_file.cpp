@@ -14,6 +14,7 @@
 #include "constants.h"
 #include "lodepng.h"
 #include "shaderprogram.h"
+#include <iostream>
 
 
 #include <random>
@@ -49,6 +50,17 @@ float aspectRatio = 1;
 float dt = 0.0;
 int score = 0;
 
+//Camera
+glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 0.0f);
+glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, 0.0f);
+glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+float yaw = -90.0f;
+float pitch = 0.0f;
+
+//Mouse
+float lastX = 400.0f, lastY = 0.0f;
+bool firstMouse = true;
+
 //Ship
 float ship_thrusters = 0.0f;
 float ship_speed = 3.7f;
@@ -74,6 +86,7 @@ model ship;
 model plane;
 model asteroid;
 model laser;
+model score1;
 
 //Asteroids positions
 astro* asteroids;
@@ -107,30 +120,9 @@ int random_sign();
 astro new_astroid(float ax, float ay, float scale, float speed);
 void loadMesh(fastObjMesh* mesh, int* sz, float** vertices, float** tex_crds, float** normls, int init_alloc);
 GLuint readTexture(const char* filename);
+model newModel(const char mesh_path[], const char color_tex_path[], const char spec_tex_path[]);
 
-model newModel(const char mesh_path[], const char color_tex_path[], const char spec_tex_path[]) {
-	model m;
-	fastObjMesh* mesh = fast_obj_read(mesh_path);
-	loadMesh(mesh, &(m.count), &(m.verts), &(m.tex_coords), &(m.normals), 512);
-	m.color_tex = readTexture(color_tex_path);
-	m.spec_tex = readTexture(spec_tex_path);
-	return m;
-}
-
-void drawModel(model m, glm::mat4 M) {
-	glUniformMatrix4fv(sp->u("M"), 1, false, glm::value_ptr(M));
-	glVertexAttribPointer(sp->a("vertex"), 4, GL_FLOAT, false, 0, m.verts); //Wskaż tablicę z danymi dla atrybutu vertex
-	glVertexAttribPointer(sp->a("texCoord0"), 2, GL_FLOAT, false, 0, m.tex_coords); //Wskaż tablicę z danymi dla atrybutu color
-	glVertexAttribPointer(sp->a("normal"), 4, GL_FLOAT, false, 0, m.normals); //Wskaż tablicę z danymi dla atrybutu normal
-
-	glUniform1i(sp->u("textureMap0"), 0);
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, m.color_tex);
-	glUniform1i(sp->u("textureMap1"), 1);
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, m.spec_tex);
-	glDrawArrays(GL_TRIANGLES, 0, m.count);
-}
+void drawModel(model m, glm::mat4 M);
 
 //Procedura obsługi błędów
 void error_callback(int error, const char* description) {
@@ -149,7 +141,7 @@ void keyCallback(GLFWwindow* window,int key,int scancode,int action,int mods) {
         if (key==GLFW_KEY_RIGHT) ship_rot_speed = 0;
         if (key==GLFW_KEY_UP && ship_thrusters > 0) ship_thrusters = 0.0f;
         if (key==GLFW_KEY_DOWN && ship_thrusters < 0) ship_thrusters = 0.0f;
-		if (key == GLFW_KEY_SPACE && !laser_out) { //Shoot laser!
+		if (key == GLFW_KEY_SPACE && !laser_out) { 
 			laser_x = ship_x;
 			laser_y = ship_y;
 			laser_vx = sinf(ship_angle) * laser_speed;
@@ -158,6 +150,45 @@ void keyCallback(GLFWwindow* window,int key,int scancode,int action,int mods) {
 			laser_out = true;
 		}
     }
+}
+
+void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
+	if (firstMouse)
+	{
+		lastX = xpos;
+		lastY = ypos;
+		firstMouse = false;
+	}
+
+	float xoffset = xpos - lastX;
+	float yoffset = lastY - ypos;
+	lastX = xpos;
+	lastY = ypos;
+
+	std::cout << "lastX: " << lastX << "  lastY: " << lastY << std::endl;
+
+	float sensitivity = 0.05f;
+	xoffset *= sensitivity;
+	yoffset *= sensitivity;
+
+	yaw += xoffset;
+	ship_rot_speed += glm::radians(xoffset);
+
+	pitch += yoffset;
+	ship_thrusters += yoffset/100;
+
+	if (pitch > 89.0f)
+		pitch = 89.0f;
+	if (pitch < -89.0f)
+		pitch = -89.0f;
+
+	glm::vec3 front;
+	front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+	front.y = sin(glm::radians(pitch));
+	front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+	cameraFront = glm::normalize(front);
+
+	//std::cout << "Front x: " << cameraFront.x << "  y: " << cameraFront.y << "  z: " << cameraFront.z << std::endl;
 }
 
 void windowResizeCallback(GLFWwindow* window,int width,int height) {
@@ -173,12 +204,17 @@ void initOpenGLProgram(GLFWwindow* window) {
 	glEnable(GL_DEPTH_TEST);
 	glfwSetWindowSizeCallback(window,windowResizeCallback);
 	glfwSetKeyCallback(window,keyCallback);
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	glfwSetCursorPosCallback(window, mouse_callback);
 
 	sp=new ShaderProgram("v_simplest.glsl",NULL,"f_simplest.glsl");
 
 	//Załaduj obiekty
 	ship = newModel("viper.obj", "viper.png", "ship_specular.png");
-	asteroid = newModel("asteroid.obj", "asteroid_color.png", "asteroid_spec.png");
+	laser = newModel("rocket.obj", "asteroid_color.png", "asteroid_spec.png");   //  newModel("rocket.obj", "rocket.png", "rocket_spec.png");
+	asteroid =  newModel("Cliff_Rock_One_OBJ.obj", "Cliff_Rock_One_BaseColor.png", "Cliff_Rock_One_Normal.png");
+	score1 = newModel("1.obj", "gray.png", "white.png");
+	
 	//Init plane for background
 	plane.verts = plane_verts;
 	plane.tex_coords = plane_tex_coords;
@@ -186,12 +222,12 @@ void initOpenGLProgram(GLFWwindow* window) {
 	plane.count = 6;
 	plane.color_tex = readTexture("space.png");
 	plane.spec_tex = plane.color_tex;
-	laser.verts = asteroid.verts; //Yes, I was that lazy
-	laser.tex_coords = asteroid.tex_coords;
-	laser.normals = asteroid.normals;
-	laser.count = asteroid.count;
-	laser.color_tex = readTexture("laser_color.png");
-	laser.spec_tex = laser.color_tex;
+	//laser.verts = asteroid.verts; //Yes, I was that lazy
+	//laser.tex_coords = asteroid.tex_coords;
+	//laser.normals = asteroid.normals;
+	//laser.count = asteroid.count;
+	//laser.color_tex = readTexture("laser_color.png");
+	//laser.spec_tex = laser.color_tex;
 	
 	//Generate initial astroids...
 	asteroids = (astro*)malloc(astro_len* 2 * sizeof(astro));
@@ -256,7 +292,7 @@ void drawScene(GLFWwindow* window) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glm::mat4 V=glm::lookAt(
-         glm::vec3(0, 0, -10),
+         glm::vec3(0, 0, -13),
          glm::vec3(0,0,0),
          glm::vec3(0.0f,1.0f,0.0f)); //Wylicz macierz widoku
 
@@ -273,6 +309,9 @@ void drawScene(GLFWwindow* window) {
 	ship_M = glm::rotate(ship_M, PI/2.0f, glm::vec3(0.0f, 1.0f, 0.0f));
 	ship_M = glm::rotate(ship_M, ship_angle,glm::vec3(0.0f,1.0f,0.0f));
 	ship_M = glm::scale(ship_M, glm::vec3(0.2f, 0.2f, 0.2f));
+
+	glm::mat4 score_M = glm::translate(M, glm::vec3(0.f, 0.0f, 0.0f));
+	score_M = glm::scale(score_M, glm::vec3(20.0f, 20.0f, 20.0f));
 
 	sp->use();//Aktywacja programu cieniującego
 	//Przeslij parametry programu cieniującego do karty graficznej
@@ -291,18 +330,22 @@ void drawScene(GLFWwindow* window) {
 	
 	glUniform1f(sp->u("background_draw"), 1.0);
 	drawModel(plane, bkg_M);
+	drawModel(score1, score_M);
 	glUniform1f(sp->u("background_draw"), 0.0);
 	drawModel(ship, ship_M);
 	if (laser_out) {
 		glm::mat4 laser_M = glm::translate(M, glm::vec3(laser_x, laser_y, 0.0f));
-		laser_M = glm::scale(laser_M, glm::vec3(0.1f, 0.1f, 0.1f));
+		laser_M = glm::rotate(laser_M, -PI / 2.0f, glm::vec3(1.0f, 0.0f, 0.0f));
+		laser_M = glm::rotate(laser_M, PI / 2.0f, glm::vec3(0.0f, 1.0f, 0.0f));
+		laser_M = glm::rotate(laser_M, ship_angle, glm::vec3(0.0f, 1.0f, 0.0f));
+		laser_M = glm::scale(laser_M, glm::vec3(0.0005f, 0.0005f, 0.0005f));
 		drawModel(laser, laser_M);
 	}
 
 	//Draw asteroids
-	for (int i = 0; i < astro_len; i++) {
+	for (int i = 0; i < astro_len*2; i++) {
 		glm::mat4 astro_M = glm::translate(M, glm::vec3(asteroids[i].x, asteroids[i].y, 0.0f));
-		astro_M = glm::scale(astro_M, glm::vec3(0.4f, 0.4f, 0.4f));
+		astro_M = glm::scale(astro_M, glm::vec3(0.005f, 0.005f, 0.005f));
 		astro_M = glm::rotate(astro_M, asteroids[i].angle, asteroids[i].rot_vec);
 		astro_M = glm::scale(astro_M, glm::vec3(asteroids[i].scale, asteroids[i].scale, asteroids[i].scale));
 		drawModel(asteroid, astro_M);
@@ -407,7 +450,7 @@ int main(void){
 			asteroids[i].y += asteroids[i].vy*dt;
 			asteroids[i].angle += asteroids[i].rot_speed * dt;
 			if (fabsf(asteroids[i].x) > 8.0 || fabsf(asteroids[i].y) > 8.0) {
-				asteroids[i] = new_astroid(-5,-5, 1, 0);
+				asteroids[i] = new_astroid(8 * random_sign(), 8 * random_sign(), 1, 1);
 			}
 		}
 		//Update laser
@@ -425,7 +468,6 @@ int main(void){
 					}
 					else if (asteroids[i].scale == 0.5) {
 						asteroids[i] = new_astroid(10, 10, 0, 0);
-						asteroids[astro_len + i] = new_astroid(10, 10, 0, 0);
 					}
 					score++;
 					break;
@@ -503,4 +545,28 @@ void loadMesh(fastObjMesh* mesh, int* sz, float** vertices, float** tex_crds, fl
 	*vertices = verts;
 	*tex_crds = tex_cords;
 	*normls = nrmls;
+}
+
+model newModel(const char mesh_path[], const char color_tex_path[], const char spec_tex_path[]) {
+	model m;
+	fastObjMesh* mesh = fast_obj_read(mesh_path);
+	loadMesh(mesh, &(m.count), &(m.verts), &(m.tex_coords), &(m.normals), 512);
+	m.color_tex = readTexture(color_tex_path);
+	m.spec_tex = readTexture(spec_tex_path);
+	return m;
+}
+
+void drawModel(model m, glm::mat4 M) {
+	glUniformMatrix4fv(sp->u("M"), 1, false, glm::value_ptr(M));
+	glVertexAttribPointer(sp->a("vertex"), 4, GL_FLOAT, false, 0, m.verts); //Wskaż tablicę z danymi dla atrybutu vertex
+	glVertexAttribPointer(sp->a("texCoord0"), 2, GL_FLOAT, false, 0, m.tex_coords); //Wskaż tablicę z danymi dla atrybutu color
+	glVertexAttribPointer(sp->a("normal"), 4, GL_FLOAT, false, 0, m.normals); //Wskaż tablicę z danymi dla atrybutu normal
+
+	glUniform1i(sp->u("textureMap0"), 0);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, m.color_tex);
+	glUniform1i(sp->u("textureMap1"), 1);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, m.spec_tex);
+	glDrawArrays(GL_TRIANGLES, 0, m.count);
 }
