@@ -89,7 +89,7 @@ model laser;
 
 //Asteroids positions
 astro* asteroids;
-int astro_len = 8;
+int astro_len = 16;
 
 //Plane arrays
 float plane_verts[] = {
@@ -229,7 +229,7 @@ void initOpenGLProgram(GLFWwindow* window) {
 	
 	//Generate initial astroids...
 	asteroids = (astro*)malloc(astro_len * sizeof(astro));
-	for (int i = 0; i < astro_len; i++) {
+	for (int i = 0; i < astro_len/2; i++) {
 		float ax = random_float(2,4);
 		float ay = random_float(2,4);		
 		int sx = random_sign();
@@ -456,11 +456,10 @@ int main(void){
 					laser_out = false;
 					if (asteroids[i].scale == 1) {
 						asteroids[i] = new_astroid(asteroids[i].x, asteroids[i].y, 0.5, random_float(0.3, 1.3));
-						asteroids[astro_len + i] = new_astroid(asteroids[i].x, asteroids[i].y, 0.5, random_float(0.3, 1.3));
+						asteroids[astro_len/2 + i] = new_astroid(asteroids[i].x, asteroids[i].y, 0.5, random_float(0.3, 1.3));
 					}
 					else if (asteroids[i].scale == 0.5) {
 						asteroids[i] = new_astroid(10, 10, 0, 0);
-						asteroids[astro_len + i] = new_astroid(10, 10, 0, 0);
 					}
 					score++;
 					break;
@@ -478,11 +477,12 @@ int main(void){
 		if (game_over) break;
 	}
 
+	printf("GAME OVER!\nScore: %d\n", score);
+
 	glfwDestroyWindow(window); //Usuń kontekst OpenGL i okno
 	glfwTerminate(); //Zwolnij zasoby zajęte przez GLFW
 	
-	printf("GAME OVER!\nScore: %d\n", score);
-
+	
 	freeOpenGLProgram(window);
 	exit(EXIT_SUCCESS);
 }
