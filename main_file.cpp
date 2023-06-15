@@ -521,8 +521,10 @@ int main(void){
 		glfwPollEvents(); //Wykonaj procedury callback w zalezności od zdarzeń jakie zaszły.
 		
 		if (game_over) break;
+		if (score ==10) break;
 	}
 
+	if (score == 10) printf("You won!");;
 	printf("GAME OVER!\nScore: %d\n", score);
 
 	glfwDestroyWindow(window); //Usuń kontekst OpenGL i okno
@@ -613,5 +615,5 @@ void drawModel(model m, glm::mat4 M, bool isAstro) {
 	else {
 		glDrawArrays(GL_TRIANGLES, 0, m.count);
 	}
-	//glDrawArrays(GL_TRIANGLES, 0, m.count);
+
 }
