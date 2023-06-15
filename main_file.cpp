@@ -182,10 +182,16 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
 	yoffset *= sensitivity;
 
 	yaw += xoffset;
-	ship_rot_speed += glm::radians(xoffset);
+	if (ship_rot_speed < glm::radians(30)) {
+		ship_rot_speed += glm::radians(xoffset);
+	}
+	//ship_rot_speed += glm::radians(xoffset);
 
 	pitch += yoffset;
-	ship_thrusters += yoffset/100;
+	if (ship_thrusters < 10.0f) {
+		ship_thrusters += yoffset / 100;
+	}
+	
 
 	if (pitch > 89.0f)
 		pitch = 89.0f;
