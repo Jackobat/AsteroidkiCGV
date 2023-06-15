@@ -331,8 +331,8 @@ void drawScene(GLFWwindow* window) {
 	ship_M = glm::scale(ship_M, glm::vec3(0.2f, 0.2f, 0.2f));
 
 	//Calculate position of the score
-	glm::mat4 score_M = glm::scale(M, glm::vec3(5.0f, 5.0f, -100.0f));
-	score_M = glm::translate(M, glm::vec3(5.0f, 5.0f, 0.0f));
+	glm::mat4 score_M = glm::scale(M, glm::vec3(5.0f, 5.0f, 10.0f));
+	score_M = glm::translate(M, glm::vec3(6.0f, 6.0f, 2.0f));
 	score_M = glm::rotate(score_M, PI, glm::vec3(0.0f, 1.0f, 0.0f));
 
 	sp->use();//Aktywacja programu cieniującego
@@ -362,27 +362,27 @@ void drawScene(GLFWwindow* window) {
 	}
 
 	switch (score) {
-	case 0: drawModel(score0, score_M);
+	case 0: drawModel(score0, score_M, false);
 		break;
-	case 1: drawModel(score1, score_M);
+	case 1: drawModel(score1, score_M, false);
 		break;
-	case 2: drawModel(score2, score_M);
+	case 2: drawModel(score2, score_M, false);
 		break;
-	case 3: drawModel(score3, score_M);
+	case 3: drawModel(score3, score_M, false);
 		break;
-	case 4: drawModel(score4, score_M);
+	case 4: drawModel(score4, score_M, false);
 		break;
-	case 5: drawModel(score5, score_M);
+	case 5: drawModel(score5, score_M, false);
 		break;
-	case 6: drawModel(score6, score_M);
+	case 6: drawModel(score6, score_M, false);
 		break;
-	case 7: drawModel(score7, score_M);
+	case 7: drawModel(score7, score_M, false);
 		break;
-	case 8: drawModel(score8, score_M);
+	case 8: drawModel(score8, score_M, false);
 		break;
-	case 9: drawModel(score9, score_M);
+	case 9: drawModel(score9, score_M, false);
 		break;
-	case 10: drawModel(score10, score_M);
+	case 10: drawModel(score10, score_M, false);
 		break;
 	}
 
