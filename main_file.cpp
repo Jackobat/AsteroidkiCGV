@@ -480,7 +480,7 @@ int main(void){
 	printf("GAME OVER!\nScore: %d\n", score);
 
 	glfwDestroyWindow(window); //Usuń kontekst OpenGL i okno
-	glfwTerminate(); //Zwolnij zasoby zajęte przez GLFW
+ 	glfwTerminate(); //Zwolnij zasoby zajęte przez GLFW
 	
 	
 	freeOpenGLProgram(window);
