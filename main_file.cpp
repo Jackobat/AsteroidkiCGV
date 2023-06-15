@@ -121,7 +121,7 @@ void loadMesh(fastObjMesh* mesh, int* sz, float** vertices, float** tex_crds, fl
 GLuint readTexture(const char* filename);
 model newModel(const char mesh_path[], const char color_tex_path[], const char spec_tex_path[]);
 
-void drawModel(model m, glm::mat4 M);
+void drawModel(model m, glm::mat4 M, bool isAstro);
 
 //Procedura obsługi błędów
 void error_callback(int error, const char* description) {
@@ -324,14 +324,14 @@ void drawScene(GLFWwindow* window) {
 	glEnableVertexAttribArray(sp->a("texCoord0"));
 	
 	glUniform1f(sp->u("background_draw"), 1.0);
-	drawModel(plane, bkg_M);
+	drawModel(plane, bkg_M, false);
 	glUniform1f(sp->u("background_draw"), 0.0);
-	drawModel(ship, ship_M);
+	drawModel(ship, ship_M, false);
 	if (laser_out) {
 		glm::mat4 laser_M = glm::translate(M, glm::vec3(laser_x, laser_y, 0.0f));
 		laser_M = glm::rotate(laser_M, -laser_angle, glm::vec3(0.0f, 0.0f, 1.0f));
 		laser_M = glm::scale(laser_M, glm::vec3(0.0005f, 0.0005f, 0.0005f));
-		drawModel(laser, laser_M);
+		drawModel(laser, laser_M, true);
 	}
 
 	//Draw asteroids
@@ -340,7 +340,7 @@ void drawScene(GLFWwindow* window) {
 		astro_M = glm::scale(astro_M, glm::vec3(0.005f, 0.005f, 0.005f));
 		astro_M = glm::rotate(astro_M, asteroids[i].angle, asteroids[i].rot_vec);
 		astro_M = glm::scale(astro_M, glm::vec3(asteroids[i].scale, asteroids[i].scale, asteroids[i].scale));
-		drawModel(asteroid, astro_M);
+		drawModel(asteroid, astro_M, true);
 	}
 	glDisableVertexAttribArray(sp->a("vertex"));  //Wyłącz przesyłanie danych do atrybutu vertex
 	glDisableVertexAttribArray(sp->a("texCoord0"));  //Wyłącz przesyłanie danych do atrybutu color
@@ -549,7 +549,7 @@ model newModel(const char mesh_path[], const char color_tex_path[], const char s
 	return m;
 }
 
-void drawModel(model m, glm::mat4 M) {
+void drawModel(model m, glm::mat4 M, bool isAstro) {
 	glUniformMatrix4fv(sp->u("M"), 1, false, glm::value_ptr(M));
 	glVertexAttribPointer(sp->a("vertex"), 4, GL_FLOAT, false, 0, m.verts); //Wskaż tablicę z danymi dla atrybutu vertex
 	glVertexAttribPointer(sp->a("texCoord0"), 2, GL_FLOAT, false, 0, m.tex_coords); //Wskaż tablicę z danymi dla atrybutu color
@@ -561,5 +561,11 @@ void drawModel(model m, glm::mat4 M) {
 	glUniform1i(sp->u("textureMap1"), 1);
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, m.spec_tex);
-	glDrawArrays(GL_TRIANGLES, 0, m.count);
+	if (isAstro) {
+		glDrawArrays(GL_LINES, 0, m.count);
+	}
+	else {
+		glDrawArrays(GL_TRIANGLES, 0, m.count);
+	}
+	//glDrawArrays(GL_TRIANGLES, 0, m.count);
 }
