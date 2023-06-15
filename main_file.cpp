@@ -242,12 +242,6 @@ void initOpenGLProgram(GLFWwindow* window) {
 	plane.count = 6;
 	plane.color_tex = readTexture("space.png");
 	plane.spec_tex = plane.color_tex;
-	//laser.verts = asteroid.verts; //Yes, I was that lazy
-	//laser.tex_coords = asteroid.tex_coords;
-	//laser.normals = asteroid.normals;
-	//laser.count = asteroid.count;
-	//laser.color_tex = readTexture("laser_color.png");
-	//laser.spec_tex = laser.color_tex;
 	
 	//Generate initial astroids...
 	asteroids = (astro*)malloc(astro_len * sizeof(astro));
@@ -321,7 +315,7 @@ void drawScene(GLFWwindow* window) {
     glm::mat4 M=glm::mat4(1.0f);
 
 	glm::mat4 bkg_M = glm::translate(M, glm::vec3(0.0f, 0.0f, 9.0f));
-	bkg_M = glm::scale(bkg_M, glm::vec3(10.0f, 10.0f, 1.0f));
+	bkg_M = glm::scale(bkg_M, glm::vec3(15.0f, 15.0f, 1.0f));
 
 	//Calculate ship's model matrix...
 	glm::mat4 ship_M = glm::translate(M, glm::vec3(ship_x, ship_y, 0.0f));
