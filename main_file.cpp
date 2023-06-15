@@ -86,10 +86,21 @@ model ship;
 model plane;
 model asteroid;
 model laser;
+model score0;
+model score1;
+model score2;
+model score3;
+model score4;
+model score5;
+model score6;
+model score7;
+model score8;
+model score9;
+model score10;
 
 //Asteroids positions
 astro* asteroids;
-int astro_len = 16;
+int astro_len = 10;
 
 //Plane arrays
 float plane_verts[] = {
@@ -212,7 +223,18 @@ void initOpenGLProgram(GLFWwindow* window) {
 	ship = newModel("viper.obj", "viper.png", "ship_specular.png");
 	laser = newModel("rocket.obj", "laser_color.png", "asteroid_spec.png");   //  newModel("rocket.obj", "rocket.png", "rocket_spec.png");
 	asteroid =  newModel("Cliff_Rock_One_OBJ.obj", "Cliff_Rock_One_BaseColor.png", "Cliff_Rock_One_Normal.png");
-	
+	score0 = newModel("0.obj", "white.png", "white.png");
+	score1 = newModel("1.obj", "white.png", "white.png");
+	score2 = newModel("2.obj", "white.png", "white.png");
+	score3 = newModel("3.obj", "white.png", "white.png");
+	score4 = newModel("4.obj", "white.png", "white.png");
+	score5 = newModel("5.obj", "white.png", "white.png");
+	score6 = newModel("6.obj", "white.png", "white.png");
+	score7 = newModel("7.obj", "white.png", "white.png");
+	score8 = newModel("8.obj", "white.png", "white.png");
+	score9 = newModel("9.obj", "white.png", "white.png");
+	score10 = newModel("10.obj", "white.png", "white.png");
+
 	//Init plane for background
 	plane.verts = plane_verts;
 	plane.tex_coords = plane_tex_coords;
@@ -308,6 +330,11 @@ void drawScene(GLFWwindow* window) {
 	ship_M = glm::rotate(ship_M, ship_angle,glm::vec3(0.0f,1.0f,0.0f));
 	ship_M = glm::scale(ship_M, glm::vec3(0.2f, 0.2f, 0.2f));
 
+	//Calculate position of the score
+	glm::mat4 score_M = glm::scale(M, glm::vec3(5.0f, 5.0f, -100.0f));
+	score_M = glm::translate(M, glm::vec3(5.0f, 5.0f, 0.0f));
+	score_M = glm::rotate(score_M, PI, glm::vec3(0.0f, 1.0f, 0.0f));
+
 	sp->use();//Aktywacja programu cieniującego
 	//Przeslij parametry programu cieniującego do karty graficznej
 	glUniformMatrix4fv(sp->u("P"), 1, false, glm::value_ptr(P));
@@ -325,6 +352,7 @@ void drawScene(GLFWwindow* window) {
 	
 	glUniform1f(sp->u("background_draw"), 1.0);
 	drawModel(plane, bkg_M);
+
 	glUniform1f(sp->u("background_draw"), 0.0);
 	drawModel(ship, ship_M);
 	if (laser_out) {
@@ -332,6 +360,31 @@ void drawScene(GLFWwindow* window) {
 		laser_M = glm::rotate(laser_M, -laser_angle, glm::vec3(0.0f, 0.0f, 1.0f));
 		laser_M = glm::scale(laser_M, glm::vec3(0.0005f, 0.0005f, 0.0005f));
 		drawModel(laser, laser_M);
+	}
+
+	switch (score) {
+	case 0: drawModel(score0, score_M);
+		break;
+	case 1: drawModel(score1, score_M);
+		break;
+	case 2: drawModel(score2, score_M);
+		break;
+	case 3: drawModel(score3, score_M);
+		break;
+	case 4: drawModel(score4, score_M);
+		break;
+	case 5: drawModel(score5, score_M);
+		break;
+	case 6: drawModel(score6, score_M);
+		break;
+	case 7: drawModel(score7, score_M);
+		break;
+	case 8: drawModel(score8, score_M);
+		break;
+	case 9: drawModel(score9, score_M);
+		break;
+	case 10: drawModel(score10, score_M);
+		break;
 	}
 
 	//Draw asteroids
