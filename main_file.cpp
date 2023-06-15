@@ -86,7 +86,6 @@ model ship;
 model plane;
 model asteroid;
 model laser;
-model score1;
 
 //Asteroids positions
 astro* asteroids;
@@ -211,9 +210,8 @@ void initOpenGLProgram(GLFWwindow* window) {
 
 	//Załaduj obiekty
 	ship = newModel("viper.obj", "viper.png", "ship_specular.png");
-	laser = newModel("rocket.obj", "asteroid_color.png", "asteroid_spec.png");   //  newModel("rocket.obj", "rocket.png", "rocket_spec.png");
+	laser = newModel("rocket.obj", "laser_color.png", "asteroid_spec.png");   //  newModel("rocket.obj", "rocket.png", "rocket_spec.png");
 	asteroid =  newModel("Cliff_Rock_One_OBJ.obj", "Cliff_Rock_One_BaseColor.png", "Cliff_Rock_One_Normal.png");
-	score1 = newModel("1.obj", "gray.png", "white.png");
 	
 	//Init plane for background
 	plane.verts = plane_verts;
@@ -230,7 +228,7 @@ void initOpenGLProgram(GLFWwindow* window) {
 	//laser.spec_tex = laser.color_tex;
 	
 	//Generate initial astroids...
-	asteroids = (astro*)malloc(astro_len* 2 * sizeof(astro));
+	asteroids = (astro*)malloc(astro_len * sizeof(astro));
 	for (int i = 0; i < astro_len; i++) {
 		float ax = random_float(2,4);
 		float ay = random_float(2,4);		
@@ -310,9 +308,6 @@ void drawScene(GLFWwindow* window) {
 	ship_M = glm::rotate(ship_M, ship_angle,glm::vec3(0.0f,1.0f,0.0f));
 	ship_M = glm::scale(ship_M, glm::vec3(0.2f, 0.2f, 0.2f));
 
-	glm::mat4 score_M = glm::translate(M, glm::vec3(0.f, 0.0f, 0.0f));
-	score_M = glm::scale(score_M, glm::vec3(20.0f, 20.0f, 20.0f));
-
 	sp->use();//Aktywacja programu cieniującego
 	//Przeslij parametry programu cieniującego do karty graficznej
 	glUniformMatrix4fv(sp->u("P"), 1, false, glm::value_ptr(P));
@@ -330,20 +325,17 @@ void drawScene(GLFWwindow* window) {
 	
 	glUniform1f(sp->u("background_draw"), 1.0);
 	drawModel(plane, bkg_M);
-	drawModel(score1, score_M);
 	glUniform1f(sp->u("background_draw"), 0.0);
 	drawModel(ship, ship_M);
 	if (laser_out) {
 		glm::mat4 laser_M = glm::translate(M, glm::vec3(laser_x, laser_y, 0.0f));
-		laser_M = glm::rotate(laser_M, -PI / 2.0f, glm::vec3(1.0f, 0.0f, 0.0f));
-		laser_M = glm::rotate(laser_M, PI / 2.0f, glm::vec3(0.0f, 1.0f, 0.0f));
-		laser_M = glm::rotate(laser_M, ship_angle, glm::vec3(0.0f, 1.0f, 0.0f));
+		laser_M = glm::rotate(laser_M, -laser_angle, glm::vec3(0.0f, 0.0f, 1.0f));
 		laser_M = glm::scale(laser_M, glm::vec3(0.0005f, 0.0005f, 0.0005f));
 		drawModel(laser, laser_M);
 	}
 
 	//Draw asteroids
-	for (int i = 0; i < astro_len*2; i++) {
+	for (int i = 0; i < astro_len; i++) {
 		glm::mat4 astro_M = glm::translate(M, glm::vec3(asteroids[i].x, asteroids[i].y, 0.0f));
 		astro_M = glm::scale(astro_M, glm::vec3(0.005f, 0.005f, 0.005f));
 		astro_M = glm::rotate(astro_M, asteroids[i].angle, asteroids[i].rot_vec);
@@ -432,7 +424,7 @@ int main(void){
 		if (ship_velocity_x * ship_velocity_x + ship_velocity_y * ship_velocity_y <= 0.002 * 0.002)
 			ship_velocity_x = ship_velocity_y = 0.0f;
 
-		for (int i = 0; i < astro_len*2; i++) {
+		for (int i = 0; i < astro_len; i++) {
 			float dx = fabsf(asteroids[i].x - ship_x);
 			float dy = fabsf(asteroids[i].y - ship_y);
 			if (dx * dx + dy * dy <= 0.3) {
@@ -445,19 +437,19 @@ int main(void){
 		ship_y = fmax(-5, fmin(ship_y, 5));
 
 		//Update astroids
-		for (int i = 0; i < astro_len*2; i++) {
+		for (int i = 0; i < astro_len; i++) {
 			asteroids[i].x += asteroids[i].vx*dt;
 			asteroids[i].y += asteroids[i].vy*dt;
 			asteroids[i].angle += asteroids[i].rot_speed * dt;
 			if (fabsf(asteroids[i].x) > 8.0 || fabsf(asteroids[i].y) > 8.0) {
-				asteroids[i] = new_astroid(8 * random_sign(), 8 * random_sign(), 1, 1);
+				asteroids[i] = new_astroid(-5,-5, 1, 0);
 			}
 		}
 		//Update laser
 		if (laser_out) {
 			laser_x += laser_vx*dt;
 			laser_y += laser_vy*dt;
-			for (int i = 0; i < astro_len*2; i++) {
+			for (int i = 0; i < astro_len; i++) {
 				float dx = fabsf(asteroids[i].x - laser_x);
 				float dy = fabsf(asteroids[i].y - laser_y);
 				if (dx * dx + dy * dy <= 0.11) {
@@ -468,6 +460,7 @@ int main(void){
 					}
 					else if (asteroids[i].scale == 0.5) {
 						asteroids[i] = new_astroid(10, 10, 0, 0);
+						asteroids[astro_len + i] = new_astroid(10, 10, 0, 0);
 					}
 					score++;
 					break;

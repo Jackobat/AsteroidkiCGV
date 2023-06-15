@@ -41,7 +41,7 @@ void main(void) {
     float nl2 = clamp(dot(mn, ml2), 0, 1);
     float rv2 = pow(clamp(dot(mr2, mv), 0, 1), 20);
 
-    pixelColor = vec4(kd.rgb * (nl2*vec3(1,1,1) + vec3(0, 1, 0)*nl), kd.a) + vec4(ks.rgb*(rv+rv2), 0);
+    pixelColor = vec4(kd.rgb * (nl2*vec3(1,1,1) + vec3(1, 1, 0)*nl), kd.a) + vec4(ks.rgb*(rv+rv2), 0);
     if (background_draw == 1.0){
         pixelColor = texture(textureMap0, iTexCoord0);
     }
